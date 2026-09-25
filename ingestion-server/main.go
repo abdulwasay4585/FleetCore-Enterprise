@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"sync"
@@ -291,6 +292,7 @@ func main() {
 
 	tcpPort := getEnv("TCP_PORT", TCPPort)
 	udpPort := getEnv("UDP_PORT", UDPPort)
+	httpPort := getEnv("PORT", getEnv("HTTP_PORT", "8080"))
 	kafkaBroker := getEnv("KAFKA_BROKER", getEnv("KAFKA_BOOTSTRAP_SERVERS", KafkaBroker))
 	kafkaTopic := getEnv("KAFKA_TOPIC", KafkaTopic)
 
@@ -307,6 +309,24 @@ func main() {
 	go engine.ListenTCP(ctx, tcpPort)
 	go engine.ListenUDP(ctx, udpPort)
 	go startMetricsReporter(ctx)
+
+	// Start HTTP health server for cloud platforms (Railway/Kubernetes)
+	httpServer := &http.Server{Addr: ":" + httpPort}
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"UP","service":"fleetcore-ingestion-engine"}`))
+	})
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"service":"FleetCore Ingestion Engine","status":"running"}`))
+	})
+	go func() {
+		log.Printf("[Ingestion-Server] HTTP Health Listener active on port :%s", httpPort)
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("[Ingestion-Server] HTTP server error: %v", err)
+		}
+	}()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)

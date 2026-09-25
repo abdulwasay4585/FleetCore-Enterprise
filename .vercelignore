@@ -1,0 +1,17 @@
+core-api
+ingestion-server
+emulators
+infrastructure
+database
+mobile
+streaming-processor
+*.png
+*.ico
+*.md
+*.html
+js/
+css/
+.git
+.github
+node_modules
+.next

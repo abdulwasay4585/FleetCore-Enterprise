@@ -108,3 +108,5 @@ FleetCore-Enterprise-design.md
 FleetCore\ Enterprise.md
 DEPLOYMENT.md
 ChatGPT\ Image*.png
+.vercel
+.env*
