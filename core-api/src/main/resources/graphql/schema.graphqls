@@ -1,0 +1,332 @@
+# FleetCore Enterprise — GraphQL Schema (F34: Open API for 3PL Integration)
+
+type Query {
+    # Asset queries
+    asset(id: ID!): Asset
+    assets(status: AssetStatus, type: String, depotId: ID): [Asset!]!
+    assetLocations: [AssetLocation!]!
+
+    # Driver queries
+    driver(id: ID!): Driver
+    drivers(depotId: ID, safetyScoreBelow: Int): [Driver!]!
+
+    # Route queries
+    route(id: ID!): Route
+    activeRoutes: [Route!]!
+
+    # Maintenance queries
+    workOrders(status: WorkOrderStatus, assetId: ID): [WorkOrder!]!
+    partsInventory(depotId: ID!): [PartItem!]!
+
+    # Compliance queries
+    eldLogs(driverId: ID!, date: String!): [ELDLogEntry!]!
+    iftaReport(carrierId: ID!, quarter: String!): IFTAReport
+
+    # Admin queries
+    auditLog(limit: Int = 100): [AuditEntry!]!
+}
+
+type Mutation {
+    # Dispatch
+    dispatchRoute(input: DispatchRouteInput!): Route!
+    immobilizeAsset(assetId: ID!, reason: String!): CommandResult!
+
+    # Messaging
+    sendMessage(input: SendMessageInput!): Message!
+
+    # Maintenance
+    submitDVIR(input: DVIRInput!): DVIRReport!
+    createWorkOrder(input: WorkOrderInput!): WorkOrder!
+    completeWorkOrder(id: ID!, laborCost: Float!, partsCost: Float!): WorkOrder!
+
+    # ELD
+    updateDutyStatus(driverId: ID!, status: DutyStatus!): ELDLogEntry!
+}
+
+type Subscription {
+    telemetryUpdate(assetId: ID): TelemetryEvent!
+    alertTriggered(tenantId: ID!): Alert!
+}
+
+# ── Core Types ────────────────────────────────────────────────────────────
+
+type Asset {
+    id: ID!
+    name: String!
+    vin: String
+    type: String!
+    status: AssetStatus!
+    depot: Depot
+    currentDriver: Driver
+    currentLocation: AssetLocation
+    latestTelemetry: TelemetryEvent
+    workOrders: [WorkOrder!]!
+    tco: TCOResult
+}
+
+type AssetLocation {
+    assetId: ID!
+    latitude: Float!
+    longitude: Float!
+    speed: Float
+    heading: Float
+    updatedAt: String!
+}
+
+type Driver {
+    id: ID!
+    name: String!
+    cdlNumber: String
+    cdlExpiry: String
+    medicalCardExpiry: String
+    safetyScore: Int
+    currentAsset: Asset
+    eldStatus: DutyStatus
+    recentSafetyEvents: [SafetyEvent!]!
+}
+
+type Depot {
+    id: ID!
+    name: String!
+    region: Region!
+    assets: [Asset!]!
+    drivers: [Driver!]!
+}
+
+type Region {
+    id: ID!
+    name: String!
+    depots: [Depot!]!
+}
+
+type Route {
+    id: ID!
+    asset: Asset!
+    driver: Driver!
+    stops: [RouteStop!]!
+    status: RouteStatus!
+    totalDistanceKm: Float
+    estimatedMinutes: Int
+    tollCostUsd: Float
+}
+
+type RouteStop {
+    id: ID!
+    name: String!
+    latitude: Float!
+    longitude: Float!
+    sequence: Int!
+    eta: String
+    arrivalTime: String
+    departureTime: String
+}
+
+type TelemetryEvent {
+    assetId: ID!
+    timestamp: String!
+    latitude: Float!
+    longitude: Float!
+    speed: Float
+    heading: Float
+    fuelLevel: Float
+    engineTemp: Float
+    rpm: Int
+    batterySocPct: Float
+    tpmsPressures: String
+}
+
+type WorkOrder {
+    id: ID!
+    asset: Asset!
+    mechanic: String
+    issue: String!
+    status: WorkOrderStatus!
+    laborCost: Float
+    partsCost: Float
+    totalCost: Float
+    createdAt: String!
+    completedAt: String
+}
+
+type PartItem {
+    id: ID!
+    partNumber: String!
+    name: String!
+    category: String!
+    quantityOnHand: Int!
+    reorderThreshold: Int!
+    unitCostUsd: Float!
+    needsReorder: Boolean!
+}
+
+type DVIRReport {
+    id: ID!
+    assetId: ID!
+    driverId: ID!
+    inspectionType: String!
+    passed: Boolean!
+    defects: [DVIRDefect!]!
+    submittedAt: String!
+}
+
+type DVIRDefect {
+    component: String!
+    severity: String!
+    description: String!
+    photoUrl: String
+}
+
+type ELDLogEntry {
+    driverId: ID!
+    status: DutyStatus!
+    startTime: String!
+    endTime: String
+    durationMinutes: Int
+    location: String
+}
+
+type IFTAReport {
+    quarter: String!
+    carrierId: ID!
+    totalMiles: Float!
+    totalGallonsPurchased: Float!
+    fleetMPG: Float!
+    jurisdictions: [IFTAJurisdiction!]!
+    netTaxOwedUsd: Float!
+}
+
+type IFTAJurisdiction {
+    state: String!
+    milesDriven: Float!
+    gallonsPurchased: Float!
+    gallonsConsumed: Float!
+    taxRate: Float!
+    taxOwedUsd: Float!
+}
+
+type SafetyEvent {
+    id: ID!
+    type: String!
+    severity: String!
+    timestamp: String!
+    latitude: Float
+    longitude: Float
+}
+
+type TCOResult {
+    assetId: ID!
+    totalCostUsd: Float!
+    costPerMileUsd: Float!
+    fuelCostUsd: Float!
+    maintenanceCostUsd: Float!
+    depreciationUsd: Float!
+}
+
+type Message {
+    id: ID!
+    senderId: ID!
+    senderRole: String!
+    recipientId: ID!
+    content: String!
+    priority: String!
+    status: String!
+    timestamp: String!
+}
+
+type Alert {
+    id: ID!
+    type: String!
+    severity: String!
+    assetId: ID
+    message: String!
+    timestamp: String!
+}
+
+type CommandResult {
+    success: Boolean!
+    commandId: String!
+    message: String!
+}
+
+type AuditEntry {
+    eventId: ID!
+    timestamp: String!
+    userId: String!
+    action: String!
+    resource: String!
+    resourceId: String
+}
+
+# ── Enums ─────────────────────────────────────────────────────────────────
+
+enum AssetStatus {
+    ACTIVE
+    IDLE
+    MAINTENANCE
+    DECOMMISSIONED
+}
+
+enum DutyStatus {
+    DRIVING
+    ON_DUTY
+    OFF_DUTY
+    SLEEPER_BERTH
+}
+
+enum RouteStatus {
+    PLANNED
+    IN_PROGRESS
+    COMPLETED
+    CANCELLED
+}
+
+enum WorkOrderStatus {
+    OPEN
+    IN_PROGRESS
+    AWAITING_PARTS
+    COMPLETED
+    CANCELLED
+}
+
+# ── Inputs ────────────────────────────────────────────────────────────────
+
+input DispatchRouteInput {
+    assetId: ID!
+    driverId: ID!
+    stops: [RouteStopInput!]!
+}
+
+input RouteStopInput {
+    name: String!
+    latitude: Float!
+    longitude: Float!
+    serviceMinutes: Int
+}
+
+input SendMessageInput {
+    senderId: ID!
+    senderRole: String!
+    recipientId: ID!
+    content: String!
+    priority: String = "NORMAL"
+}
+
+input DVIRInput {
+    assetId: ID!
+    driverId: ID!
+    inspectionType: String!
+    defects: [DVIRDefectInput!]
+    driverSignature: String
+}
+
+input DVIRDefectInput {
+    component: String!
+    severity: String!
+    description: String!
+}
+
+input WorkOrderInput {
+    assetId: ID!
+    mechanicId: ID!
+    issue: String!
+}

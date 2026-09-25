@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FleetCore Enterprise - Industrial Fleet Operating System</title>
+  <link rel="stylesheet" href="css/main.css">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Leaflet Vector Map Tiles -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+  <div id="app-root">
+
+    <!-- Global Mission Control Header -->
+    <header class="header-bar">
+      <div class="brand-section">
+        <!-- The Core Ring Logo -->
+        <div class="core-ring-logo">
+          <div class="core-center-square"></div>
+          <div class="core-ring-segment segment-top"></div>
+          <div class="core-ring-segment segment-right"></div>
+          <div class="core-ring-segment segment-bottom"></div>
+          <div class="core-ring-segment segment-left"></div>
+        </div>
+        <div class="brand-title">FLEET<span>CORE</span> ENTERPRISE</div>
+      </div>
+
+      <div class="system-status-pills">
+        <div class="status-indicator">
+          <div class="dot-pulse"></div>
+          <span>Go Ingestion: 2.4M pings/sec</span>
+        </div>
+        <div class="status-indicator">
+          <i data-lucide="cpu" style="width: 14px; height: 14px; color: var(--color-copper);"></i>
+          <span>Flink Stream: 12ms Lag</span>
+        </div>
+        <div class="status-indicator">
+          <i data-lucide="shield-check" style="width: 14px; height: 14px; color: var(--color-success);"></i>
+          <span>mTLS Security Active</span>
+        </div>
+        
+        <select class="tenant-selector" id="locale-switcher" onchange="switchLocale(this.value)">
+          <option value="en_US">Global HQ (en_US)</option>
+          <option value="es_MX">Mexico Regional (es_MX)</option>
+          <option value="fr_CA">Canada Hub (fr_CA)</option>
+          <option value="de_DE">Europe Hub (de_DE)</option>
+        </select>
+      </div>
+    </header>
+
+    <!-- Navigation Module Bar -->
+    <nav class="nav-tab-bar">
+      <div class="nav-tab active" onclick="switchPage('command-center')">
+        <i data-lucide="map-pin"></i> Command Center (Live Map)
+      </div>
+      <div class="nav-tab" onclick="switchPage('asset-directory')">
+        <i data-lucide="truck"></i> Asset Directory & 360 Health
+      </div>
+      <div class="nav-tab" onclick="switchPage('dispatch-board')">
+        <i data-lucide="calendar"></i> Dispatch & Routing (Gantt)
+      </div>
+      <div class="nav-tab" onclick="switchPage('driver-safety')">
+        <i data-lucide="shield-alert"></i> Driver Safety & Coaching
+      </div>
+      <div class="nav-tab" onclick="switchPage('maintenance-planner')">
+        <i data-lucide="wrench"></i> Maintenance & DVIR
+      </div>
+      <div class="nav-tab" onclick="switchPage('eld-compliance')">
+        <i data-lucide="clock"></i> ELD Compliance & IFTA
+      </div>
+      <div class="nav-tab" onclick="switchPage('geofence-manager')">
+        <i data-lucide="map"></i> Geofences & PostGIS
+      </div>
+      <div class="nav-tab" onclick="switchPage('reports-bi')">
+        <i data-lucide="bar-chart-3"></i> Telemetry Reports & BI
+      </div>
+      <div class="nav-tab" onclick="switchPage('admin-integrations')">
+        <i data-lucide="settings"></i> Admin & ERP Integrations
+      </div>
+      <div class="nav-tab" onclick="switchPage('driver-app-sim')">
+        <i data-lucide="smartphone"></i> Driver Cab App (Simulator)
+      </div>
+    </nav>
+
+    <!-- Main Viewport -->
+    <main class="main-viewport">
+
+      <!-- PAGE 1: Command Center Live Map -->
+      <section id="page-command-center" class="page-view command-center-container active">
+        
+        <!-- Floating Left Search & Asset Panel -->
+        <aside class="map-floating-panel">
+          <div class="panel-header">
+            <span>COMMAND CENTER ASSETS</span>
+            <span class="badge-online" style="font-size: 0.75rem;">1,420 Active Pings</span>
+          </div>
+          <div class="panel-body">
+            <div class="search-input-wrapper">
+              <i data-lucide="search" class="search-icon"></i>
+              <input type="text" placeholder="Filter asset ID, driver, or depot..." id="asset-search-input" oninput="filterAssets(this.value)">
+            </div>
+
+            <div class="asset-list-scroll" id="map-asset-list">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </aside>
+
+        <!-- Leaflet Map Container -->
+        <div id="command-map" class="map-viewport"></div>
+
+        <!-- Right Side Drawer: Asset 360 Inspector -->
+        <aside id="asset-drawer" class="map-floating-panel asset-inspector-drawer" style="display: none;">
+          <div class="panel-header" style="justify-content: space-between;">
+            <div>
+              <span id="drawer-asset-id" style="font-size: 1.1rem; font-weight: 700;">TRK-8921</span>
+              <span id="drawer-asset-status" class="asset-badge badge-online">ONLINE</span>
+            </div>
+            <button onclick="closeDrawer()" class="btn-close">✕</button>
+          </div>
+
+          <div class="panel-body" style="gap: 16px;">
+            <div class="drawer-section">
+              <div class="drawer-label">ASSET DETAILS</div>
+              <div class="drawer-val-large" id="drawer-asset-name">Volvo FH16 Globetrotter</div>
+              <div class="text-muted" style="font-size: 0.8rem;" id="drawer-asset-vin">VIN: 19X91929410912</div>
+            </div>
+
+            <div class="drawer-grid">
+              <div class="drawer-stat-card">
+                <span class="text-muted">DRIVER</span>
+                <strong id="drawer-driver">Marcus Vance</strong>
+              </div>
+              <div class="drawer-stat-card">
+                <span class="text-muted">CURRENT SPEED</span>
+                <strong id="drawer-speed">105.4 km/h</strong>
+              </div>
+              <div class="drawer-stat-card">
+                <span class="text-muted">FUEL BURN RATE</span>
+                <strong id="drawer-fuel-burn">32.5 L/h</strong>
+              </div>
+              <div class="drawer-stat-card">
+                <span class="text-muted">REEFER TEMP</span>
+                <strong id="drawer-reefer-temp" style="color: var(--color-cyan);">-18.2°C</strong>
+              </div>
+            </div>
+
+            <!-- TPMS 18-Wheel Heatmap -->
+            <div class="drawer-section">
+              <div class="drawer-label">18-WHEEL TPMS PRESSURE HEATMAP (PSI)</div>
+              <div class="tpms-heatmap-grid" id="tpms-grid">
+                <!-- Rendered dynamically via JS -->
+              </div>
+            </div>
+
+            <!-- EV Sub-Panel -->
+            <div class="drawer-section" id="ev-subpanel" style="display: none; background: rgba(0, 230, 153, 0.05); border: 1px solid var(--color-success); border-radius: var(--radius-sm); padding: 12px;">
+              <div class="drawer-label" style="color: var(--color-success);">EV BATTERY HEALTH (F10)</div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-top: 4px;">
+                <span>State of Charge (SoC): <strong id="ev-soc">78.5%</strong></span>
+                <span>State of Health (SoH): <strong id="ev-soh">96.2%</strong></span>
+              </div>
+            </div>
+
+            <!-- Dashcam Video Trigger HUD -->
+            <div class="drawer-section">
+              <div class="drawer-label">AI DASHCAM REAL-TIME HUD (F7)</div>
+              <div class="dashcam-hud-box">
+                <div class="dashcam-overlay-text">LIVE 1080p INWARD/OUTWARD FEED</div>
+                <div class="dashcam-overlay-alert" id="dashcam-ai-alert">AI FATIGUE: SAFE | TTC: 3.2s</div>
+              </div>
+            </div>
+
+            <!-- DTC Fault Code Dialog -->
+            <div class="drawer-section" id="dtc-section">
+              <div class="drawer-label" style="color: var(--color-warning);">ACTIVE ENGINE DTC FAULT (F3)</div>
+              <div class="dtc-box" id="dtc-box-content">
+                <strong>P0299</strong> - Turbocharger Underboost Condition
+              </div>
+            </div>
+          </div>
+
+          <!-- Feature 8: Remote Asset Immobilization Button -->
+          <div class="drawer-section" style="margin-top: auto; padding: 12px;">
+            <div style="display: flex; gap: 10px;">
+              <button class="btn-primary" style="flex: 1;" onclick="immobilizeAsset()">Remote Immobilize (mTLS)</button>
+              <button class="btn-secondary" style="flex: 1;" onclick="openWorkOrder()">Create Work Order</button>
+            </div>
+          </div>
+        </aside>
+
+      </section>
+
+      <!-- PAGE 2: Asset Directory & 360 Health -->
+      <section id="page-asset-directory" class="page-view">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <div>
+            <h1 style="font-size: 1.5rem; font-weight: 700;">Global Fleet Asset Directory & 360 Health</h1>
+            <p class="text-muted" style="font-size: 0.88rem;">Real-time asset telemetry, Total Cost of Ownership (TCO), TPMS heatmaps, and EV battery metrics.</p>
+          </div>
+          <button class="btn-primary" onclick="alert('Provisioning API launched. MTLS cert template ready.')">+ Provision New Asset</button>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-card-title">Total Operational Assets</div>
+            <div class="metric-card-value">1,420</div>
+            <div class="metric-card-sub text-muted"><span style="color: var(--color-success); font-weight: 700;">94.2%</span> Fleet Utilization Rate</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-card-title">Cold-Chain Reefer Trailers</div>
+            <div class="metric-card-value">385</div>
+            <div class="metric-card-sub text-muted">100% Temp Threshold Compliance</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-card-title">Electric Vehicle (EV) Fleet</div>
+            <div class="metric-card-value">140</div>
+            <div class="metric-card-sub text-muted">Avg State of Charge: 78.5%</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-card-title">Active DTC Engine Faults</div>
+            <div class="metric-card-value" style="color: var(--color-danger);">14</div>
+            <div class="metric-card-sub text-muted">Requires Mechanic Inspection</div>
+          </div>
+        </div>
+
+        <div class="enterprise-table-container">
+          <table class="enterprise-table">
+            <thead>
+              <tr>
+                <th>Asset ID</th>
+                <th>Name / Model</th>
+                <th>Category</th>
+                <th>Depot Hub</th>
+                <th>Assigned Driver</th>
+                <th>Status</th>
+                <th>Fuel / EV SoC</th>
+                <th>Fuel Burn Rate</th>
+                <th>TPMS Baseline</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="asset-directory-table-body">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- PAGE 3: Dispatch & Commercial Routing (Gantt Chart & Route Optimizer) -->
+      <section id="page-dispatch-board" class="page-view">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <div>
+            <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 6px;">Dispatch & Commercial Routing Command</h1>
+            <p class="text-muted" style="font-size: 0.88rem;">Gantt load scheduling, TSP route optimization (F11/F16), backhaul load matching (F19), and yard management (F20).</p>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn-secondary" onclick="runBackhaulMatching()">🔄 Match Backhauls (F19)</button>
+            <button class="btn-primary" onclick="runAutoDispatch()">⚡ Auto-Dispatch Engine (F13)</button>
+          </div>
+        </div>
+
+        <!-- Interactive Gantt Board Shell -->
+        <div style="background: var(--color-obsidian-light); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 16px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.85rem; font-weight: 700; color: var(--color-steel);">
+            <span>RESOURCE / ASSET</span>
+            <span>08:00</span><span>10:00</span><span>12:00</span><span>14:00</span><span>16:00</span><span>18:00</span><span>20:00</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px;" id="gantt-rows">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+        <!-- Dispatch Controls Split -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div style="background: var(--color-obsidian-light); border: 1px solid var(--color-border); padding: 16px; border-radius: var(--radius-md);">
+            <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 10px;">Route Optimization Engine (F11 & F16)</h3>
+            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">
+              <label>Origin: <input type="text" value="Chicago Depot #1 (41.8781, -87.6298)" style="background: #111; color: #fff; border: 1px solid #333; padding: 6px; width: 100%; border-radius: 4px;"></label>
+              <label>Stops (TSP Multi-Stop): <input type="text" value="Costco, Target, Walmart, Home Depot" style="background: #111; color: #fff; border: 1px solid #333; padding: 6px; width: 100%; border-radius: 4px;"></label>
+              <label>Vehicle Clearance Height: <input type="text" value="4.2 meters (Commercial I-90 clearance)" style="background: #111; color: #fff; border: 1px solid #333; padding: 6px; width: 100%; border-radius: 4px;"></label>
+              <button class="btn-primary" style="margin-top: 6px;" onclick="calculateOptimizedRoute()">Run TSP & Toll Optimizer</button>
+            </div>
+            <div id="route-opt-output" style="margin-top: 10px; font-family: monospace; font-size: 0.8rem; background: #000; padding: 10px; border-radius: 4px; display: none;"></div>
+          </div>
+
+          <div style="background: var(--color-obsidian-light); border: 1px solid var(--color-border); padding: 16px; border-radius: var(--radius-md);">
+            <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 10px;">Depot Yard Management (F20)</h3>
+            <div id="yard-asset-list" style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE 4: Driver Safety & AI Dashcam -->
+      <section id="page-driver-safety" class="page-view">
+        <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 6px;">Driver Safety & AI Dashcam Event Log</h1>
+        <p class="text-muted" style="font-size: 0.88rem; margin-bottom: 20px;">Driver safety scoring engine (F28) with automated AI coaching assignments (F29).</p>
+
+        <div class="enterprise-table-container">
+          <table class="enterprise-table">
+            <thead>
+              <tr>
+                <th>Driver Name</th>
+                <th>Safety Score</th>
+                <th>Harsh Braking</th>
+                <th>Overspeeding</th>
+                <th>Fatigue Flags</th>
+                <th>AI Coaching Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="driver-safety-table-body">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- PAGE 5: Maintenance & DVIR Planner -->
+      <section id="page-maintenance-planner" class="page-view">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <div>
+            <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 6px;">Maintenance, Work Orders & Parts Inventory</h1>
+            <p class="text-muted" style="font-size: 0.88rem;">Digital DVIR reports (F22), Work Orders CRUD (F24), Parts inventory (F23), and TCO Calculator (F25).</p>
+          </div>
+          <button class="btn-primary" onclick="createNewWorkOrderUI()">+ Create Work Order</button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div style="background: var(--color-obsidian-light); border: 1px solid var(--color-border); padding: 16px; border-radius: var(--radius-md);">
+            <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 10px;">Mechanic Work Orders (F24)</h3>
+            <div id="work-orders-list" style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <div style="background: var(--color-obsidian-light); border: 1px solid var(--color-border); padding: 16px; border-radius: var(--radius-md);">
+            <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 10px;">Depot Parts Inventory (F23)</h3>
+            <div id="parts-inventory-list" style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE 6: FMCSA ELD Compliance & IFTA -->
+      <section id="page-eld-compliance" class="page-view">
+        <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 6px;">FMCSA ELD Compliance & IFTA Fuel Tax Reports</h1>
+        <p class="text-muted" style="font-size: 0.88rem; margin-bottom: 20px;">Hours of Service (HOS) rules (F26), automated IFTA tax reporting (F27), and document expirations (F30).</p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+          <div style="background: var(--color-obsidian-light); border: 1px solid var(--color-border); padding: 16px; border-radius: var(--radius-md);">
+            <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 10px;">IFTA Quarterly Fuel Tax Breakdown (Q2-2026) (F27)</h3>
+            <table style="width: 100%; font-size: 0.85rem; border-collapse: collapse;">
+              <thead>
+                <tr style="text-align: left; border-bottom: 1px solid #333;">
+                  <th>State</th><th>Miles</th><th>Gallons</th><th>Tax Owed</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Illinois</td><td>12,400</td><td>1,800</td><td>$210.42</td></tr>
+                <tr><td>Indiana</td><td>8,200</td><td>1,100</td><td>$142.10</td></tr>
+                <tr><td>Ohio</td><td>6,800</td><td>400</td><td>$89.50</td></tr>
+                <tr><td>Michigan</td><td>4,200</td><td>600</td><td>$54.30</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="background: var(--color-obsidian-light); border: 1px solid var(--color-border); padding: 16px; border-radius: var(--radius-md);">
+            <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 10px;">License & Medical Card Expiration Alerts (F30)</h3>
+            <div id="expirations-list" style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE 7: Geofences & PostGIS -->
+      <section id="page-geofence-manager" class="page-view">
+        <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 6px;">Geofence Manager & Flink Ray-Casting Stream</h1>
+        <p class="text-muted" style="font-size: 0.88rem; margin-bottom: 20px;">PostGIS polygon evaluation engine with sub-second entry/exit alerts (F6).</p>
+      </section>
+
+      <!-- PAGE 8: Reports & BI -->
+      <section id="page-reports-bi" class="page-view">
+        <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 6px;">Telemetry Reports & Enterprise BI Generator</h1>
+        <p class="text-muted" style="font-size: 0.88rem; margin-bottom: 20px;">Export data for Tableau, PowerBI, and GraphQL 3PL partners (F33 & F34).</p>
+        <button class="btn-primary" onclick="generateBIReport()">Generate Executive BI Export</button>
+        <div id="bi-report-output" style="margin-top: 16px; font-family: monospace; background: #000; padding: 16px; border-radius: 8px; display: none;"></div>
+      </section>
+
+      <!-- PAGE 9: Admin & Integrations -->
+      <section id="page-admin-integrations" class="page-view">
+        <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 6px;">Admin, Immutable Audit Trail & ERP Adapters</h1>
+        <p class="text-muted" style="font-size: 0.88rem; margin-bottom: 20px;">Audit logging (F38), SAP/Oracle ERP Sync (F35), and data retention policies (F39).</p>
+        <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+          <button class="btn-primary" onclick="triggerERPSyncUI()">Trigger SAP ERP Sync</button>
+          <button class="btn-secondary" onclick="fetchAuditLogsUI()">Fetch Immutable Audit Trail</button>
+        </div>
+        <div id="admin-output" style="font-family: monospace; background: #000; padding: 16px; border-radius: 8px; display: none;"></div>
+      </section>
+
+      <!-- PAGE 10: Driver Cab App Simulator -->
+      <section id="page-driver-app-sim" class="page-view" style="align-items: center; justify-content: center; background-color: #000;">
+        <div class="cab-app-shell" style="border: 2px solid var(--color-copper); width: 420px; border-radius: 16px; background: #111;">
+          <div class="cab-header" style="background: #1e293b; color: #fff; padding: 12px; font-weight: 800; text-align: center; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+            FLEETCORE DRIVER CAB APP (ELD & MANIFEST)
+          </div>
+          <div style="padding: 16px; text-align: center;">
+            <h2 style="font-size: 1.2rem; color: #fff;">Driver: Marcus Vance</h2>
+            <p class="text-muted" style="font-size: 0.85rem;">Vehicle: TRK-8921 (Volvo FH16)</p>
+          </div>
+          <div class="cab-duty-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px;">
+            <button class="btn-primary" style="background: #22c55e;" onclick="setDuty('DRIVING')">🚛 DRIVING</button>
+            <button class="btn-primary" style="background: #3b82f6;" onclick="setDuty('ON_DUTY')">🔧 ON-DUTY</button>
+            <button class="btn-primary" style="background: #6b7280;" onclick="setDuty('OFF_DUTY')">🏠 OFF-DUTY</button>
+            <button class="btn-primary" style="background: #8b5cf6;" onclick="setDuty('SLEEPER')">😴 SLEEPER</button>
+          </div>
+          <div style="padding: 12px; border-top: 1px solid #333; text-align: center;">
+            <button class="btn-secondary" style="width: 100%;" onclick="alert('Manifest Loaded: 4 Stops Remaining. e-Signature pad active.')">📋 View Manifest & Delivery e-Signature</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "fleetcore-driver-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios"
+  },
+  "dependencies": {
+    "expo": "~49.0.0",
+    "react": "18.2.0",
+    "react-native": "0.72.6",
+    "react-native-signature-canvas": "^4.5.0"
+  }
+}

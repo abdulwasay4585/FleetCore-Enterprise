@@ -1,0 +1,807 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+/* ==========================================================================
+   FleetCore Enterprise — Industrial Mission Control Design System
+   Strict compliance with FleetCore-Enterprise-design.md v1.0
+   
+   Design Philosophy: Engineered for organizations that move the world's
+   infrastructure. No glassmorphism, no blue gradients, no cyberpunk neon,
+   no organic blobs, no floating glass effects, no neumorphism.
+   ========================================================================== */
+
+/* ==========================================================================
+   DESIGN TOKENS — Exact hex values from FleetCore-Enterprise-design.md
+   ========================================================================== */
+:root {
+  color-scheme: dark;
+
+  /* Primary: Steel Graphite */
+  --color-graphite: #252A30;
+
+  /* Secondary: Signal Copper */
+  --color-copper: #C76B2A;
+  --color-copper-hover: #B55A1A;
+
+  /* Accent: Electric Lime (live telemetry, connected, healthy — never large bg) */
+  --color-lime: #B6FF3B;
+
+  /* Semantic Status Colors */
+  --color-success: #32C971;
+  --color-warning: #F2A63B;
+  --color-danger: #E5484D;
+  --color-info: #4285F4;
+
+  /* Legacy aliases mapping to strict design system tokens */
+  --color-emerald: var(--color-success);
+  --color-amber: var(--color-warning);
+  --color-crimson: var(--color-danger);
+  --color-cyan: var(--color-info);
+  --color-teal: var(--color-success);
+
+  /* Light Mode (unused in dark dashboard, defined for completeness) */
+  --color-bg-light: #F4F5F2;
+  --color-surface-light: #E5E7E2;
+  --color-border-light: #C8CDC8;
+
+  /* Dark Mode — Primary UI Surface System */
+  --color-bg-deep: #111417;
+  --color-bg-surface: #1D2329;
+  --color-surface: #1D2329;
+  --color-bg-primary: #111417;
+  --color-dark-bg: #111417;
+  --color-border-bright: #444D59;
+  --color-bg-elevated: #252A30;
+  --color-bg-hover: #2C333C;
+  --color-border: #343B44;
+  --color-border-subtle: #2A3039;
+
+  /* Text Colors */
+  --color-text-primary: #F5F7F8;
+  --color-text-secondary: #5F6975;
+  --color-text-muted: #8A96A3;
+  --color-text-white: #F5F7F8;
+
+  /* Typography — Geist (Primary), IBM Plex Sans (Secondary), JetBrains Mono (Data) */
+  --font-primary: 'Geist', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-secondary: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+
+  /* Border Radius — per spec: 6px buttons/cards/inputs, 4px tables, 0px charts */
+  --radius-button: 6px;
+  --radius-card: 6px;
+  --radius-input: 6px;
+  --radius-table: 4px;
+  --radius-chart: 0px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 6px;
+  --radius-pill: 9999px;
+
+  /* Shadows — Soft and subtle only. No floating glass, no neumorphism */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+  /* 8px Spacing Grid System */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Transition — Functional, not decorative */
+  --transition-fast: all 0.15s ease;
+  --transition-normal: all 0.2s ease;
+}
+
+/* ==========================================================================
+   GLOBAL RESET & TYPOGRAPHY ENFORCEMENT
+   Strictly adheres to FleetCore-Enterprise-design.md:
+   - Primary Font: Geist (Headings 700, Body 400)
+   - Secondary Font: IBM Plex Sans (UI Labels 500)
+   - Telemetry / Numeric: JetBrains Mono (Data readouts)
+   - Slightly increased letter-spacing, generous whitespace, no AI buzzwords
+   ========================================================================== */
+html {
+  scroll-behavior: smooth;
+  color-scheme: dark;
+  background-color: #111417;
+  color: #F5F7F8;
+}
+
+section[id] {
+  scroll-margin-top: 84px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-primary, 'Geist', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  background-color: #111417 !important;
+  color: #F5F7F8 !important;
+  color-scheme: dark;
+  line-height: 1.55;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: 0.015em;
+  margin: 0;
+  padding: 0;
+}
+
+/* Headings — Geist 700, increased letter spacing, solid enterprise contrast */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-primary);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--color-text-primary);
+  line-height: 1.25;
+}
+
+/* Paragraphs & general content — Geist 400 */
+p, li, dd {
+  font-family: var(--font-primary);
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+/* UI Labels, Navigation, Controls — IBM Plex Sans 500 */
+button, input, select, textarea, label, .badge, .nav-item, .nav-section-title, th {
+  font-family: var(--font-secondary);
+  font-weight: 500;
+  letter-spacing: 0.035em;
+}
+
+/* Telemetry, Data Readouts, Latencies, VINs — JetBrains Mono */
+code, pre, .font-mono, .text-mono, .mono, [data-mono], .telemetry-cell {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* ==========================================================================
+   SCROLLBAR — Industrial, minimal
+   ========================================================================== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg-deep);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}
+
+/* ==========================================================================
+   LAYOUT FRAMEWORK — Mission Control Shell
+   ========================================================================== */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: var(--color-bg-deep);
+}
+
+.main-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ==========================================================================
+   HEADER BAR — Steel Graphite (#252A30), NO blur, NO glassmorphism
+   ========================================================================== */
+.header-bar {
+  height: 56px;
+  background-color: var(--color-graphite);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-6);
+  z-index: 50;
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* Core Ring Logo — Central Square + 4 Modular Segments */
+.core-ring-logo {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.core-center-square {
+  width: 10px;
+  height: 10px;
+  background-color: var(--color-copper);
+  border-radius: 2px;
+}
+
+.core-ring-segment {
+  position: absolute;
+  background: var(--color-text-primary);
+  border-radius: 1px;
+}
+.segment-top { top: 2px; left: 9px; width: 14px; height: 3px; }
+.segment-bottom { bottom: 2px; left: 9px; width: 14px; height: 3px; }
+.segment-left { left: 2px; top: 9px; width: 3px; height: 14px; }
+.segment-right { right: 2px; top: 9px; width: 3px; height: 14px; }
+
+.brand-title {
+  font-weight: 800;
+  font-size: 1.1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-primary);
+}
+.brand-title span {
+  color: var(--color-copper);
+  font-weight: 700;
+}
+
+.header-status-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* Status Pill — Industrial indicator */
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px 12px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-button);
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dot-lime { background-color: var(--color-lime); box-shadow: 0 0 6px rgba(182, 255, 59, 0.5); }
+.dot-copper { background-color: var(--color-copper); }
+.dot-success { background-color: var(--color-success); }
+.dot-danger { background-color: var(--color-danger); }
+
+/* Subtle pulse for live indicators only */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.dot-lime { animation: pulse 2.5s ease-in-out infinite; }
+
+/* ==========================================================================
+   SIDEBAR NAVIGATION — Structured, dense, industrial
+   ========================================================================== */
+.sidebar-nav {
+  width: 252px;
+  background-color: var(--color-bg-deep);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-4) var(--space-3);
+  gap: 2px;
+  overflow-y: auto;
+  z-index: 40;
+  flex-shrink: 0;
+}
+
+.nav-section-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-text-secondary);
+  padding: var(--space-4) var(--space-3) var(--space-2);
+  font-family: var(--font-primary);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 8px 12px;
+  border-radius: var(--radius-button);
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  border: 1px solid transparent;
+  min-height: 36px;
+}
+
+.nav-item:hover {
+  background-color: var(--color-bg-surface);
+  color: var(--color-text-primary);
+}
+
+.nav-item.active {
+  background-color: rgba(199, 107, 42, 0.1);
+  border-color: rgba(199, 107, 42, 0.25);
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.nav-item-icon {
+  font-size: 1rem;
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   MAIN VIEWPORT
+   ========================================================================== */
+.main-viewport {
+  flex: 1;
+  padding: var(--space-6) var(--space-8);
+  overflow-y: auto;
+  position: relative;
+}
+
+/* ==========================================================================
+   CARDS — Thin border, minimal shadow, 6px radius. NO glassmorphism.
+   ========================================================================== */
+.enterprise-card {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-fast);
+}
+
+.enterprise-card:hover {
+  border-color: var(--color-text-secondary);
+}
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+  letter-spacing: 0.02em;
+}
+
+/* ==========================================================================
+   TABLES — Enterprise style, 4px radius, sticky headers, alternating rows
+   ========================================================================== */
+.table-container {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-table);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.enterprise-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.84rem;
+}
+
+.enterprise-table th {
+  background-color: var(--color-graphite);
+  color: var(--color-text-muted);
+  font-weight: 600;
+  padding: 12px 16px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  font-family: var(--font-primary);
+}
+
+.enterprise-table td {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--color-border-subtle);
+  color: var(--color-text-primary);
+  font-size: 0.84rem;
+}
+
+/* Alternating row colors per design spec */
+.enterprise-table tr:nth-child(even) td {
+  background-color: rgba(29, 35, 41, 0.4);
+}
+
+.enterprise-table tr:hover td {
+  background-color: var(--color-bg-hover);
+}
+
+/* ==========================================================================
+   STATUS BADGES — Flat, high contrast, pill shape
+   ========================================================================== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-button);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-family: var(--font-primary);
+}
+.badge-success { background: rgba(50, 201, 113, 0.12); color: var(--color-success); border: 1px solid rgba(50, 201, 113, 0.25); }
+.badge-warning { background: rgba(242, 166, 59, 0.12); color: var(--color-warning); border: 1px solid rgba(242, 166, 59, 0.25); }
+.badge-danger { background: rgba(229, 72, 77, 0.12); color: var(--color-danger); border: 1px solid rgba(229, 72, 77, 0.25); }
+.badge-info { background: rgba(66, 133, 244, 0.12); color: var(--color-info); border: 1px solid rgba(66, 133, 244, 0.25); }
+
+/* ==========================================================================
+   BUTTONS — Flat, high contrast, rectangle, 6px radius. Min 44px touch.
+   ========================================================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 40px;
+  padding: 8px 16px;
+  border-radius: var(--radius-button);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: var(--transition-fast);
+  border: none;
+  font-family: var(--font-primary);
+  letter-spacing: 0.02em;
+}
+.btn:focus-visible {
+  outline: 2px solid var(--color-copper);
+  outline-offset: 2px;
+}
+.btn-primary {
+  background-color: var(--color-copper);
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(199, 107, 42, 0.25);
+}
+.btn-primary:hover {
+  background-color: var(--color-copper-hover);
+}
+.btn-secondary {
+  background-color: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+}
+.btn-secondary:hover {
+  border-color: var(--color-text-secondary);
+  background-color: var(--color-bg-hover);
+}
+.btn-danger {
+  background-color: var(--color-danger);
+  color: #FFFFFF;
+}
+.btn-danger:hover {
+  opacity: 0.9;
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+.btn-ghost:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-text-secondary);
+}
+
+/* ==========================================================================
+   METRIC PANELS — Large numeric values, compact labels
+   ========================================================================== */
+.metric-panel {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-5);
+}
+.metric-value {
+  font-family: var(--font-mono);
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1.2;
+}
+.metric-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: var(--space-1);
+}
+
+/* ==========================================================================
+   COMMAND CENTER DRAWER (Section 29 — Figma Wireframe Spec)
+   Right-side drawer with live dashcam + OBD-II stats
+   ========================================================================== */
+.drawer-backdrop,
+.modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(10, 14, 18, 0.88);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  overflow-y: auto;
+}
+
+.drawer-backdrop.drawer-right {
+  justify-content: flex-end;
+  align-items: stretch;
+  padding: 0;
+}
+
+.inspection-drawer {
+  width: 520px;
+  height: 100vh;
+  background: var(--color-bg-deep);
+  border-left: 1px solid var(--color-border);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: var(--space-6);
+  animation: slideInRight 0.25s ease;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+/* Dashcam HUD — industrial grid overlay */
+.dashcam-hud-box {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  background: var(--color-bg-deep);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-5);
+}
+.dashcam-grid {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(to right, rgba(52, 59, 68, 0.3) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(52, 59, 68, 0.3) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Telemetry Gauge Grid */
+.gauge-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+.gauge-card {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  padding: 12px;
+  border-radius: var(--radius-card);
+  text-align: center;
+}
+.gauge-val {
+  font-family: var(--font-mono);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-copper);
+  margin-top: var(--space-1);
+}
+.gauge-label {
+  font-size: 0.68rem;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   FORM INPUTS — Industrial, 6px radius, no glow
+   ========================================================================== */
+.enterprise-input, .enterprise-select {
+  background: var(--color-bg-deep);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  padding: 8px 12px;
+  border-radius: var(--radius-input);
+  font-size: 0.84rem;
+  outline: none;
+  transition: var(--transition-fast);
+  font-family: var(--font-secondary);
+  min-height: 40px;
+}
+.enterprise-input:focus, .enterprise-select:focus {
+  border-color: var(--color-copper);
+}
+.enterprise-input::placeholder {
+  color: var(--color-text-secondary);
+}
+
+/* Large command-style search bar per UI Components spec */
+.command-search {
+  background: var(--color-bg-deep);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  padding: 12px 16px;
+  border-radius: var(--radius-input);
+  font-size: 0.92rem;
+  width: 100%;
+  outline: none;
+  font-family: var(--font-secondary);
+  min-height: 44px;
+  letter-spacing: 0.02em;
+}
+.command-search:focus {
+  border-color: var(--color-copper);
+}
+
+/* ==========================================================================
+   UTILITY CLASSES
+   ========================================================================== */
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+.flex-row { display: flex; align-items: center; gap: var(--space-3); }
+.flex-col { display: flex; flex-direction: column; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-5); }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-5); }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-5); }
+.text-mono { font-family: var(--font-mono); }
+.text-copper { color: var(--color-copper); }
+.text-lime { color: var(--color-lime); }
+.text-muted { color: var(--color-text-muted); }
+.text-secondary { color: var(--color-text-secondary); }
+
+/* ==========================================================================
+   MOBILE NAV DRAWER & OVERLAY
+   ========================================================================== */
+.mobile-nav-toggle {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  padding: 6px 10px;
+  border-radius: var(--radius-button);
+  cursor: pointer;
+  min-height: 40px;
+  min-width: 40px;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 90;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+.mobile-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+/* Responsive table scroll wrapper */
+.responsive-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ==========================================================================
+   RESPONSIVE BREAKPOINTS
+   ========================================================================== */
+@media (max-width: 1100px) {
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 1024px) {
+  .header-bar {
+    padding: 0 var(--space-4);
+  }
+  .mobile-nav-toggle {
+    display: flex;
+  }
+  .sidebar-nav {
+    position: fixed;
+    left: -280px;
+    top: 56px;
+    bottom: 0;
+    width: 260px;
+    z-index: 95;
+    transition: transform 0.25s ease;
+    box-shadow: 8px 0 24px rgba(0, 0, 0, 0.6);
+  }
+  .sidebar-nav.open {
+    transform: translateX(280px);
+  }
+  .main-viewport {
+    padding: var(--space-4) var(--space-5);
+    width: 100%;
+  }
+  .header-status-group {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 {
+    grid-template-columns: 1fr;
+  }
+  .header-bar {
+    height: auto;
+    min-height: 56px;
+    flex-wrap: wrap;
+    padding: var(--space-2) var(--space-3);
+  }
+  .brand-title {
+    font-size: 0.95rem;
+  }
+  .main-viewport {
+    padding: var(--space-3);
+  }
+  .enterprise-card {
+    padding: var(--space-4);
+  }
+  .gauge-grid {
+    grid-template-columns: 1fr;
+  }
+  .inspection-drawer {
+    width: 100vw !important;
+  }
+}
