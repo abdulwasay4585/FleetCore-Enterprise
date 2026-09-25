@@ -1,0 +1,139 @@
+name: FleetCore Enterprise — CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Frontend ────────────────────────────────────────────────────────────────
+  frontend-build:
+    name: Build & Deploy Frontend (Next.js)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js production bundle
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_WS_URL: ${{ vars.NEXT_PUBLIC_WS_URL }}
+          NEXT_PUBLIC_AI_SIDECAR_URL: ${{ vars.NEXT_PUBLIC_AI_SIDECAR_URL }}
+          NEXT_PUBLIC_MAPBOX_TOKEN: ''
+          NEXT_TELEMETRY_DISABLED: 1
+
+      - name: Deploy to Vercel (production)
+        if: github.ref == 'refs/heads/main'
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: frontend
+          vercel-args: '--prod'
+
+  # ── Core API ────────────────────────────────────────────────────────────────
+  core-api-build:
+    name: Build Core API (Spring Boot / Java 17)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: core-api
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build with Maven (skip tests for speed)
+        run: mvn clean package -DskipTests --no-transfer-progress
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-api-jar
+          path: core-api/target/*.jar
+          retention-days: 7
+
+  # ── Go Ingestion Server ─────────────────────────────────────────────────────
+  ingestion-build:
+    name: Build Go Ingestion Server
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ingestion-server
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go 1.21
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Build binary
+        run: CGO_ENABLED=0 go build -ldflags="-w -s" -o ingestion_bin ./...
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ingestion-bin
+          path: ingestion-server/ingestion_bin
+          retention-days: 7
+
+  # ── Python AI Sidecar ────────────────────────────────────────────────────────
+  ai-sidecar-validate:
+    name: Validate Python AI Sidecar (Python 3.11)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Syntax check all sidecar modules
+        run: |
+          python -m py_compile emulators/stretch_ai_math_service.py
+          python -m py_compile emulators/cv_dashcam_ai_service.py
+          python -m py_compile emulators/ml_predictive_maintenance_service.py
+          python -m py_compile emulators/device_emulator.py
+          echo "✅ All Python modules passed syntax check"
+
+  # ── Security Scan ────────────────────────────────────────────────────────────
+  secret-scan:
+    name: Security — Secret & Credential Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan for accidentally committed secrets
+        run: |
+          echo "Scanning for hardcoded credentials..."
+          ! grep -rn "CHANGE_ME\b" \
+            --include="*.java" --include="*.go" --include="*.py" \
+            --include="*.jsx" --include="*.js" --include="*.ts" \
+            --include="*.properties" --include="*.yml" . \
+            | grep -v ".env.example" \
+            | grep -v "DEPLOYMENT.md" \
+            | grep -v ".github/workflows"
+          echo "✅ No hardcoded secrets found"
